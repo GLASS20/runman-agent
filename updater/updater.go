@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	releaseRepository = "narwhal-cloud/runman-agent"
+	releaseRepository = "GLASS20/runman-agent"
 	installScript     = "/opt/narwhal-agent/install.sh"
 )
 

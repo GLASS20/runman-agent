@@ -99,7 +99,7 @@ cp "$TEST_ROOT/new-agent" "$3"
     def test_preserves_config_and_live_wal_database(self):
         _, calls = self.run_installer()
         self.assertIn("systemctl restart narwhal-agent", calls)
-        self.assertIn("narwhal-cloud/runman-agent/releases/download/continuous", calls)
+        self.assertIn("GLASS20/runman-agent/releases/download/continuous", calls)
         self.assertEqual((self.agent / "narwhal-agent").read_bytes(), self.new_binary)
         config = json.loads((self.agent / "config.json").read_text())
         for key, value in self.config.items():

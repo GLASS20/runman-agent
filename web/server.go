@@ -533,7 +533,7 @@ func (s *Server) handleUpdateCheck(w http.ResponseWriter, _ *http.Request) {
 // checkLatestVersion 从 GitHub Releases 获取最新版本号
 func (s *Server) checkLatestVersion() (version string, err error) {
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get("https://api.github.com/repos/narwhal-cloud/runman-agent/releases/latest")
+	resp, err := client.Get("https://api.github.com/repos/GLASS20/runman-agent/releases/latest")
 	if err != nil {
 		return "", err
 	}
