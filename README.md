@@ -74,13 +74,13 @@ bash reinstall.sh debian 13
 可以直接从仓库获取最新的安装脚本：
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh)
 ```
 
 或使用 Release 最新发布版本：
 
 ```bash
-bash <(curl -fsSL https://github.com/narwhal-cloud/runman-agent/releases/latest/download/install.sh)
+bash <(curl -fsSL https://github.com/GLASS20/runman-agent/releases/latest/download/install.sh)
 ```
 
 安装器默认从 GitHub Releases 下载匹配的 Agent 与 rfw 二进制。需要固定版本时可设置 `AGENT_RELEASE_TAG=vX.Y.Z`，私有镜像或自建下载源可设置 `RUNMAN_AGENT_DOWNLOAD_BASE=https://...`。

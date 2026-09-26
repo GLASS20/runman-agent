@@ -54,6 +54,18 @@ func (h *HostMonitor) GetStats(ctx context.Context) (*HostStats, error) {
 	targetDisk, _ := ctx.Value(DiskKey).(string)
 
 	v, _ := mem.VirtualMemory()
+	s, _ := mem.SwapMemory()
+
+	// plus swap
+	if v != nil {
+		total := v.Total
+		if s != nil {
+			total += s.Total
+		}
+
+		hb.RamTotalMb = int64(total / 1024 / 1024)
+	}
+
 	c, _ := cpu.Percent(0, false)
 	cpuCount, _ := cpu.Counts(false)
 

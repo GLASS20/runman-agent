@@ -19,7 +19,7 @@ RFW_API_ADDR="127.0.0.1:7734"  # rfw 仅监听本地，由 agent 面板反代
 PODMAN_NETWORK="narwhal-net"
 
 AGENT_RELEASE_TAG="${AGENT_RELEASE_TAG:-continuous}"
-DOWNLOAD_BASE="${RUNMAN_AGENT_DOWNLOAD_BASE:-https://github.com/narwhal-cloud/runman-agent/releases/download/$AGENT_RELEASE_TAG}"
+DOWNLOAD_BASE="${RUNMAN_AGENT_DOWNLOAD_BASE:-https://github.com/GLASS20/runman-agent/releases/download/$AGENT_RELEASE_TAG}"
 CLOUD_HYPERVISOR_BASE="https://github.com/cloud-hypervisor/cloud-hypervisor/releases/latest/download"
 # 预构建系统镜像（cloudhv/incus），由 narwhal-cloud/images 仓库 CI 每月构建
 VM_IMAGES_BASE="https://github.com/narwhal-cloud/images/releases/download/vm-latest"
