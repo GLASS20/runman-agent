@@ -2553,7 +2553,7 @@ fi
 cat > /etc/systemd/zram-generator.conf <<'EOF'
 [zram0]
 compression-algorithm=lz4
-zram-size=ram/2
+zram-size=ram*2
 fs-type=swap
 swap-priority=100
 EOF
