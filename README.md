@@ -36,7 +36,7 @@ NarwhalCloud Agent 就是让你的服务器具备"自动切分 NAT VPS 实例 + 
 
 ---
 
-## 概述（技术）
+## 概述（技术） 
 
 NarwhalCloud Agent（`narwhal-agent`）是运行在宿主机（母鸡）上的后台服务，负责管理容器 / 虚拟机实例，将您的服务器接入 NarwhalCloud 平台，并提供本地 Web 管理面板。Agent 支持三种虚拟化后端（Podman、cloud-hypervisor KVM、Incus LXC），自动处理 NAT 端口转发、流量统计和 IPv6 分配，是平台侧与租户实例之间的唯一桥梁。
 
