@@ -56,16 +56,6 @@ func (h *HostMonitor) GetStats(ctx context.Context) (*HostStats, error) {
 	v, _ := mem.VirtualMemory()
 	s, _ := mem.SwapMemory()
 
-	// plus swap
-	if v != nil {
-		total := v.Total
-		if s != nil {
-			total += s.Total
-		}
-
-		hb.RamTotalMb = int64(total / 1024 / 1024)
-	}
-
 	c, _ := cpu.Percent(0, false)
 	cpuCount, _ := cpu.Counts(false)
 
@@ -112,7 +102,6 @@ func (h *HostMonitor) GetStats(ctx context.Context) (*HostStats, error) {
 	rateIn := int64(float64(currentIn-h.lastNetIn) / elapsed)
 	rateOut := int64(float64(currentOut-h.lastNetOut) / elapsed)
 
-	// 首次采样或计数器重置时速率无意义，归零
 	if h.lastNetIn == 0 || rateIn < 0 {
 		rateIn = 0
 	}
@@ -135,15 +124,25 @@ func (h *HostMonitor) GetStats(ctx context.Context) (*HostStats, error) {
 
 	if v != nil {
 		hb.RamUsedMb = int64(v.Used / 1024 / 1024)
-		hb.RamTotalMb = int64(v.Total / 1024 / 1024)
+
+		// RAM + Swap 作为上报的总内存容量
+		total := v.Total
+		if s != nil {
+			total += s.Total
+		}
+
+		hb.RamTotalMb = int64(total / 1024 / 1024)
 	}
+
 	if len(c) > 0 {
 		hb.CpuPct = float32(c[0])
 	}
+
 	if d != nil {
 		hb.DiskUsedGb = int64(d.Used / 1024 / 1024 / 1024)
 		hb.DiskTotalGb = int64(d.Total / 1024 / 1024 / 1024)
 	}
+
 	if loadAvg != nil {
 		hb.Load1 = float32(loadAvg.Load1)
 		hb.Load5 = float32(loadAvg.Load5)
