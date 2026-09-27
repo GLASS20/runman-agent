@@ -1,7 +1,5 @@
 # Narwhal Cloud Agent Gateway 协议对接指南
 
-[English](PROTOCOL.en.md)
-
 本文档面向希望自行实现 Agent 端的开发者，说明如何通过 `AgentGateway` gRPC 协议接入 Narwhal Cloud 平台。
 
 ---

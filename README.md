@@ -2,8 +2,6 @@
 
 > **把你的闲置服务器变成 NAT VPS 共享主机，平摊成本，按天分成赚钱。**
 
-[English](README.en.md) | [控制台](https://dash.fuckip.me) | [官网](https://fuckip.me)
-
 ---
 
 ## 这是什么？
@@ -141,36 +139,36 @@ ULA（`fc00::/7`）和链路本地地址不会被当成公网路由前缀。
 
 ```bash
 # NAT4 + 自动探测公网 IPv6
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   zh --virt incus --nat4 --non-interactive --generate-token
 
 # 纯 IPv6 容器；自动识别原生 /64 或隧道路由 /64
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --virt incus --ipv6-only --non-interactive
 
 # 手工 routed /64（HE 6in4、WireGuard、供应商静态路由）
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --virt incus --nat4 --non-interactive \
   --ipv6-mode subnet --ipv6-addr 2001:db8:100::1 \
   --ipv6-subnet 2001:db8:100::/64 --ipv6-iface wg6 --ipv6-routed
 
 # 手工原生二层 /64（不加 --ipv6-routed，安装器会验证 NDP 场景）
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --virt incus --nat4 --non-interactive \
   --ipv6-mode subnet --ipv6-addr 2001:db8:200::1 \
   --ipv6-subnet 2001:db8:200::/64 --ipv6-iface eth0
 
 # IPv6 SNAT + NAT4（只有单个公网 IPv6 时）
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --virt incus --ipv6-mode snat --nat4 --non-interactive
 
 # Podman：3G XFS 数据盘 + 单公网 IPv6 SNAT；非交互模式不会再等待容量输入
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   zh --virt podman --data-size 3G --ipv6-mode snat \
   --non-interactive --generate-token
 
 # Podman：使用 docker.io registry mirror；URL/主机名按实际服务替换
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   zh --virt podman --data-size 8G --ipv6-mode none \
   --podman-registry-mirror https://mirror.example.com --non-interactive
 
@@ -292,10 +290,10 @@ bash install.sh en --detect-ipv6 --non-interactive
 
 ```bash
 # 强制使用 SNAT 模式
-IPV6_MODE=snat bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh)
+IPV6_MODE=snat bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh)
 
 # 强制使用子网模式并指定 IP、子网和上行接口
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --ipv6-mode subnet --ipv6-addr 2001:db8::1 \
   --ipv6-subnet 2001:db8::/64 --ipv6-iface eth0
 ```
@@ -317,11 +315,11 @@ bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/m
 
 ```bash
 # 使用自定义 simplestreams 镜像服务器（任意实现了 streams/v1/images.json 的服务）
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --image-mirror https://mirror.example.com
 
 # 完全离线：本地目录预置 incus-<distro>-<arch>.tar.gz（无需任何网络）
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --local-image-dir /root/incus-images
 ```
 
@@ -339,11 +337,11 @@ bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/m
 
 ```bash
 # 安装时指定本地文件（导入为 incus 别名 custom/alpine-base，用于所有 alpine 容器）
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --alpine-base ./alpine-base.tar.gz
 
 # 或直接传已存在的 incus 镜像别名
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --alpine-base my-alpine
 ```
 
@@ -353,11 +351,11 @@ bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/m
 
 ```bash
 # 使用内置 project 模板
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --banner-preset project
 
 # 完全自定义横幅文本
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --banner-preset custom --banner-text "$(cat /root/my-banner.txt)"
 ```
 
@@ -369,7 +367,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/m
 
 ```bash
 # 每个容器分配 10 个公网 IPv6 地址
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --ipv6-alloc 10
 ```
 
@@ -381,7 +379,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/m
 
 ```bash
 # 要求 IPv6 模式为 subnet 或 snat（none 模式下会直接报错退出）
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) \
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) \
   --virt incus --ipv6-only --non-interactive
 ```
 
@@ -502,7 +500,7 @@ unset NARWHAL_AGENT_TOKEN
 无需先卸载。使用 root 执行：
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/narwhal-cloud/runman-agent/main/install.sh) zh --update-only
+bash <(curl -fsSL https://raw.githubusercontent.com/GLASS20/runman-agent/main/install.sh) zh --update-only
 systemctl status narwhal-agent --no-pager
 journalctl -u narwhal-agent -n 50 --no-pager
 ```
