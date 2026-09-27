@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"math/rand"
 	"net"
 	"net/http"
@@ -32,6 +33,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -257,35 +259,230 @@ func main() {
 // measureBandwidth 通过下载 Cloudflare 测速文件估算出口带宽，
 // 结果保存到数据库并更新 HostMonitor 缓存。
 func (a *Agent) measureBandwidth() {
-	const testURL = "https://speed.cloudflare.com/__down?bytes=92160000"
-	log.Printf("Starting bandwidth test...")
-	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
+	const (
+		testURL    = "https://speed.cloudflare.com/__down?bytes=92160000"
+		workers    = 6
+		warmup     = 800 * time.Millisecond
+		duration   = 2500 * time.Millisecond
+		windowSize = 500 * time.Millisecond
+	)
+
+	log.Printf("Starting peak bandwidth test...")
+
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		warmup+duration+time.Second,
+	)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", testURL, nil)
-	if err != nil {
-		log.Printf("Bandwidth test request error: %v", err)
-		return
+	// 使用独立 Transport，允许多个并发连接。
+	transport := &http.Transport{
+		MaxIdleConns:        workers,
+		MaxIdleConnsPerHost: workers,
+		MaxConnsPerHost:     workers,
+		DisableCompression:  true,
 	}
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
+	var total atomic.Int64
+
+	// 预热阶段：建立多个连接并开始传输，但不计入最终结果。
+	var warmupWG sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		warmupWG.Add(1)
+
+		go func() {
+			defer warmupWG.Done()
+
+			req, err := http.NewRequestWithContext(
+				ctx,
+				http.MethodGet,
+				testURL,
+				nil,
+			)
+			if err != nil {
+				return
+			}
+
+			resp, err := client.Do(req)
+			if err != nil {
+				return
+			}
+			defer resp.Body.Close()
+
+			buf := make([]byte, 64*1024)
+
+			deadline := time.After(warmup)
+
+			for {
+				select {
+				case <-deadline:
+					return
+				default:
+				}
+
+				n, err := resp.Body.Read(buf)
+				if n > 0 {
+					total.Add(int64(n))
+				}
+				if err != nil {
+					return
+				}
+			}
+		}()
+	}
+
+	warmupWG.Wait()
+
+	// 真正测速。
+	//
+	// 每 100ms 记录一次累计字节数，然后计算
+	// 500ms 滑动窗口的吞吐量。
+	type sample struct {
+		timestamp time.Time
+		bytes     int64
+	}
+
+	samples := make([]sample, 0, 64)
+
+	measureCtx, measureCancel := context.WithTimeout(
+		context.Background(),
+		duration,
+	)
+	defer measureCancel()
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			req, err := http.NewRequestWithContext(
+				measureCtx,
+				http.MethodGet,
+				testURL,
+				nil,
+			)
+			if err != nil {
+				return
+			}
+
+			resp, err := client.Do(req)
+			if err != nil {
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+				return
+			}
+
+			buf := make([]byte, 128*1024)
+
+			for {
+				n, err := resp.Body.Read(buf)
+
+				if n > 0 {
+					total.Add(int64(n))
+				}
+
+				if err != nil {
+					return
+				}
+
+				select {
+				case <-measureCtx.Done():
+					return
+				default:
+				}
+			}
+		}()
+	}
+
+	// 定期采样。
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
 	start := time.Now()
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Printf("Bandwidth test failed: %v", err)
+
+	for {
+		select {
+		case now := <-ticker.C:
+			samples = append(samples, sample{
+				timestamp: now,
+				bytes:     total.Load(),
+			})
+
+			if now.Sub(start) >= duration {
+				goto done
+			}
+
+		case <-measureCtx.Done():
+			goto done
+		}
+	}
+
+done:
+	measureCancel()
+	wg.Wait()
+
+	// 计算 500ms 滑动窗口中的峰值吞吐。
+	var peakMbps float64
+
+	for i := 1; i < len(samples); i++ {
+		end := samples[i]
+
+		target := end.timestamp.Add(-windowSize)
+
+		// 找到窗口起点。
+		j := i - 1
+		for j >= 0 && samples[j].timestamp.After(target) {
+			j--
+		}
+
+		if j < 0 {
+			continue
+		}
+
+		dt := end.timestamp.Sub(samples[j].timestamp).Seconds()
+		if dt <= 0 {
+			continue
+		}
+
+		bytes := end.bytes - samples[j].bytes
+
+		mbps := float64(bytes) * 8 / dt / 1_000_000
+
+		if mbps > peakMbps {
+			peakMbps = mbps
+		}
+	}
+
+	transport.CloseIdleConnections()
+
+	if peakMbps <= 0 {
+		log.Printf("Peak bandwidth test failed: no valid samples")
 		return
 	}
-	defer func() { _ = resp.Body.Close() }()
 
-	n, err := io.Copy(io.Discard, resp.Body)
-	if err != nil {
-		log.Printf("Bandwidth test read error: %v", err)
-		return
-	}
-	elapsed := time.Since(start).Seconds()
-	mbps := int32(float64(n) * 8 / elapsed / 1_000_000)
-	log.Printf("Bandwidth test result: %d Mbps (downloaded %d bytes in %.2fs)", mbps, n, elapsed)
+	// 四舍五入，而不是直接截断。
+	peak := int32(math.Round(peakMbps))
 
-	// 将测速结果保留在内存，HostMonitor 使用，不写配置文件
-	a.hostMon.SetBandwidth(mbps)
+	log.Printf(
+		"Peak bandwidth: %d Mbps (%.2f Mbps, %d workers, %.0fms window)",
+		peak,
+		peakMbps,
+		workers,
+		windowSize.Seconds()*1000,
+	)
+
+	// 上传/缓存峰值吞吐。
+	a.hostMon.SetBandwidth(peak)
 }
 
 // run 是主循环：持续从配置管理器读取最新配置，等待 Token 就绪后建立 gRPC 连接，
