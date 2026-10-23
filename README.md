@@ -1,4 +1,4 @@
-# NarwhalCloud Agent — 安装指南
+# Agent — 安装指南
 
 > **把你的闲置服务器变成 NAT VPS 共享主机，平摊成本，按天分成赚钱。**
 
