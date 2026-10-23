@@ -24,7 +24,7 @@ type IPCount struct {
 }
 
 const (
-	MinPort = 1024
+	MinPort = 20000
 	MaxPort = 65535
 )
 

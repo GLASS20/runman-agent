@@ -78,20 +78,40 @@ func (m *Manager) timeoutCtx() context.Context {
 	return ctx
 }
 
+// CPUUsagePercent 容器可用的 CPU 上限百分比（相对分配的核心数）。
+// 30 表示即使分配了 N 核，每周期也只允许使用 N×30% 的 CPU 时间。
+const CPUUsagePercent = 30
+
 func buildResourceConfig(cpu int64, ramMb int64, cpuset string) specgen.ContainerResourceConfig {
 	res := &specs.LinuxResources{}
 	if ramMb > 0 {
+		memLimit := ramMb * 1024 * 1024
 		res.Memory = &specs.LinuxMemory{
-			Limit:            ptr(ramMb * 1024 * 1024),
+			Limit:            ptr(memLimit),
+			Swap:             ptr(memLimit), // 禁用 swap
 			DisableOOMKiller: ptr(false),
 		}
 	}
 	if cpu > 0 {
-		res.CPU = &specs.LinuxCPU{
-			Quota:  ptr(cpu * 100000),
-			Period: ptr(uint64(100000)),
-			Cpus:   cpuset,
+		const period uint64 = 100000 // 100ms（us），CFS 标准周期
+		// Quota = 每周期允许消耗的 CPU 时间（us）
+		//   原：cpu * 100000        → 100% 使用 cpu 个核心
+		//   现：cpu * 100000 * 30%  → 最多使用 cpu×0.3 个核心
+		quota := cpu * int64(period) * CPUUsagePercent / 100
+		// CFS 要求 Quota ≥ 1000us（1ms），否则 cgroup 写入会被内核拒绝
+		if quota < 1000 {
+			quota = 1000
 		}
+		cpuShares := uint64(cpu) * 1024
+		cpuRes := &specs.LinuxCPU{
+			Quota:  ptr(quota),
+			Period: ptr(period),
+			Shares: &cpuShares,
+		}
+		if cpuset != "" {
+			cpuRes.Cpus = cpuset
+		}
+		res.CPU = cpuRes
 	}
 	return specgen.ContainerResourceConfig{
 		ResourceLimits: res,
