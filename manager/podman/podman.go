@@ -80,7 +80,7 @@ func (m *Manager) timeoutCtx() context.Context {
 
 // CPUUsagePercent 容器可用的 CPU 上限百分比（相对分配的核心数）。
 // 30 表示即使分配了 N 核，每周期也只允许使用 N×30% 的 CPU 时间。
-const CPUUsagePercent = 30
+const CPUUsagePercent = 5
 
 func buildResourceConfig(cpu int64, ramMb int64, cpuset string) specgen.ContainerResourceConfig {
 	res := &specs.LinuxResources{}
