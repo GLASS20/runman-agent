@@ -1124,13 +1124,18 @@ enable_bbr() {
     cat > /etc/sysctl.d/99-narwhalcloud.conf <<'EOF'
 net.core.default_qdisc=fq
 net.ipv4.tcp_congestion_control=bbr
-fs.inotify.max_user_instances=524288
-fs.inotify.max_user_watches=1048576
-fs.inotify.max_queued_events=65536
+fs.inotify.max_user_instances=65536
+fs.inotify.max_user_watches=524288
+fs.inotify.max_queued_events=16384
 kernel.pid_max=4194304
 fs.file-max=2097152
 fs.nr_open=2097152
-vm.swappiness=100
+vm.page-cluster = 0
+vm.watermark_boost_factor = 0
+vm.watermark_scale_factor = 125
+vm.swappiness=180
+vm.overcommit_memory=1
+vm.panic_on_oom = 0
 net.ipv4.ip_forward=1
 net.ipv6.conf.all.forwarding=1
 net.ipv6.conf.default.forwarding=1
@@ -2859,8 +2864,8 @@ After=network-online.target
 [Service]
 Type=oneshot
 RemainAfterExit=true
-ExecStart=/usr/bin/podman start --all --filter restart-policy=always --filter restart-policy=unless-stopped
-ExecStop=/usr/bin/podman stop --all --filter restart-policy=always --filter restart-policy=unless-stopped
+ExecStart=/usr/bin/podman start --all --filter restart-policy=no --filter restart-policy=unless-stopped
+ExecStop=/usr/bin/podman stop --all --filter restart-policy=no --filter restart-policy=unless-stopped
 
 [Install]
 WantedBy=default.target
@@ -3108,6 +3113,10 @@ PY
 fi
 
 IP=$(curl -4 -s --max-time 10 ip.sb 2>/dev/null || echo "N/A")
+
+systemctl daemon-reload
+systemctl restart systemd-zram-setup@zram0.service
+
 echo ""
 log "========================================"
 log "$(t "✓ NarwhalCloud Agent installation complete!" "✓ NarwhalCloud Agent 安装完成！")"

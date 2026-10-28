@@ -85,11 +85,14 @@ const CPUUsagePercent = 5
 func buildResourceConfig(cpu int64, ramMb int64, cpuset string) specgen.ContainerResourceConfig {
 	res := &specs.LinuxResources{}
 	if ramMb > 0 {
-		memLimit := ramMb * 1024 * 1024
+		memLimit := int64(ramMb) * 1024 * 1024
+
 		res.Memory = &specs.LinuxMemory{
-			Limit:            ptr(memLimit),
-			Swap:             ptr(memLimit), // 禁用 swap
-			DisableOOMKiller: ptr(false),
+			Limit: ptr(memLimit),     // memory.max：64MB 物理 RAM 硬上限
+			Swap:  ptr(memLimit * 2), // memory.swap.max = 64MB（可用 zram）
+			// High:             ptr(memLimit * 3 / 4),// memory.high：48MB 起开始换出冷页
+			Reservation:      ptr(memLimit / 4), // memory.low：只保护 16MB，其余可牺牲
+			DisableOOMKiller: ptr(false),        // cgroup v2 无效，保留兼容
 		}
 	}
 	if cpu > 0 {
