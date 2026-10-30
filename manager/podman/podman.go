@@ -80,19 +80,14 @@ func (m *Manager) timeoutCtx() context.Context {
 
 // CPUUsagePercent 容器可用的 CPU 上限百分比（相对分配的核心数）。
 // 30 表示即使分配了 N 核，每周期也只允许使用 N×30% 的 CPU 时间。
-const CPUUsagePercent = 5
+const CPUUsagePercent = 15
 
 func buildResourceConfig(cpu int64, ramMb int64, cpuset string) specgen.ContainerResourceConfig {
 	res := &specs.LinuxResources{}
 	if ramMb > 0 {
-		memLimit := int64(ramMb) * 1024 * 1024
-
 		res.Memory = &specs.LinuxMemory{
-			Limit: ptr(memLimit),     // memory.max：64MB 物理 RAM 硬上限
-			Swap:  ptr(memLimit * 2), // memory.swap.max = 64MB（可用 zram）
-			// High:             ptr(memLimit * 3 / 4),// memory.high：48MB 起开始换出冷页
-			Reservation:      ptr(memLimit / 4), // memory.low：只保护 16MB，其余可牺牲
-			DisableOOMKiller: ptr(false),        // cgroup v2 无效，保留兼容
+			Limit:            ptr(ramMb * 1024 * 1024),
+			DisableOOMKiller: ptr(false),
 		}
 	}
 	if cpu > 0 {

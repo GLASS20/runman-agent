@@ -1124,15 +1124,12 @@ enable_bbr() {
     cat > /etc/sysctl.d/99-narwhalcloud.conf <<'EOF'
 net.core.default_qdisc=fq
 net.ipv4.tcp_congestion_control=bbr
-fs.inotify.max_user_instances=65536
-fs.inotify.max_user_watches=524288
-fs.inotify.max_queued_events=16384
+fs.inotify.max_user_instances=524288
+fs.inotify.max_user_watches=1048576
+fs.inotify.max_queued_events=65536
 kernel.pid_max=4194304
 fs.file-max=2097152
 fs.nr_open=2097152
-vm.page-cluster = 0
-vm.watermark_boost_factor = 0
-vm.watermark_scale_factor = 125
 vm.swappiness=180
 vm.overcommit_memory=1
 vm.panic_on_oom = 0
@@ -2558,7 +2555,7 @@ fi
 cat > /etc/systemd/zram-generator.conf <<'EOF'
 [zram0]
 compression-algorithm=lz4
-zram-size=ram*2
+zram-size=ram
 fs-type=swap
 swap-priority=100
 EOF
